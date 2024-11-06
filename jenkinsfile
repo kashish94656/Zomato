@@ -1,0 +1,58 @@
+pipeline {
+    agent any 
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git branch: 'main', url: 'https://github.com/kashish94656/Zomato.git'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    dir("${WORKSPACE}/Full_Stack_Blog") {
+                        bat 'npm install'
+                    }
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    dir("${WORKSPACE}/Full_Stack_Blog") {
+                        echo 'Building'
+                    }
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                bat 'docker build -t zomato .'
+            }
+        }
+        
+        stage('Run Container/Deploy') {
+            steps {
+                bat 'docker run -d -p 3000:3000 --name zomato zomato'
+            }
+        }
+        
+        stage('Test Deployment') {
+            steps {
+                script {
+                    def output = bat(script: 'docker ps -f "name=zomato"', returnStdout: true).trim()
+                    if (output.contains('zomato')) {
+                        echo 'Container is running!'
+                    } else {
+                        error 'Container is not running!'
+                    }
+                }
+            }
+        }
+
+
+    }
+}
